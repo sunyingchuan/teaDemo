@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.team.seven.tea.system.dao.SysRoleDao">
+    <resultMap id="BaseResultMap" type="com.ucar.team.seven.tea.system.entity.SysRole">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="create_emp" jdbcType="BIGINT" property="createEmp" />
+        <result column="modify_emp" jdbcType="BIGINT" property="modifyEmp" />
+        <result column="modify_time" jdbcType="TIMESTAMP" property="modifyTime" />
+        <result column="remark" jdbcType="VARCHAR" property="remark" />
+    </resultMap>
+
+    <sql id="table_name">t_sys_role</sql>
+
+    <select id="listPage" resultMap="BaseResultMap"
+            parameterType="com.ucar.team.seven.tea.system.vo.SysRoleQuery">
+        SELECT ID,
+        NAME,DESCRIPTION,CREATE_TIME,MODIFY_TIME,
+        CREATE_EMP,
+        MODIFY_EMP,
+        REMARK
+
+        FROM
+        <include refid="table_name"></include>
+        <where>
+            <if test="name!=null and name!=''">
+                NAME LIKE CONCAT( #{name}, '%')
+            </if>
+            <if test="description!=null and description!=''">
+               and description LIKE CONCAT( #{description}, '%')
+            </if>
+        </where>
+        ORDER BY CREATE_TIME DESC
+
+        /*判断是否需要分页*/
+        <if test="pageOffset!=null and pageLimit!=null">
+            LIMIT #{pageOffset},#{pageLimit}
+        </if>
+
+    </select>
+
+    <insert id="insert" parameterType="com.ucar.team.seven.tea.system.entity.SysRole">
+        insert into
+        <include refid="table_name"></include>
+        (name,description,create_time,modify_time,create_emp,modify_emp,remark)
+        values
+        (
+        #{name},
+        #{description},
+        #{createTime},
+        #{modifyTime},
+        #{createEmp},
+        #{modifyEmp},
+        #{remark}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.ucar.team.seven.tea.system.entity.SysRole">
+        update
+        <include refid="table_name"></include>
+        set
+        name = #{name},
+        description = #{description},
+        create_time = #{createTime},
+        modify_time = #{ modifyTime },
+        create_emp = #{ createEmp },
+        modify_emp = #{ modifyEmp },
+        remark = #{remark}
+
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBatch">
+        delete from
+        <include refid="table_name"></include>
+        <if test="array!= null">
+            where id in
+            (
+            <foreach collection="array" item="roleId" index="index" separator=",">
+                #{roleId}
+            </foreach>
+
+            )
+
+        </if>
+
+    </delete>
+
+    <select id="countAll" resultType="java.lang.Long">
+        select count(id) from
+        <include refid="table_name"></include>
+    </select>
+
+    <delete id="deleteRolePermissionByRoleId" parameterType="java.lang.Long">
+		DELETE FROM
+			t_sys_role_permission
+		WHERE
+			role_id = #{roleId}
+	</delete>
+
+    <insert id="saveRolePermission">
+        INSERT INTO
+        t_sys_role_permission(role_id,permission_id) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.roleId},#{item.permissionId})
+        </foreach>
+    </insert>
+
+    <select id="getById" parameterType="java.lang.Long" resultType="com.ucar.team.seven.tea.system.entity.SysRole">
+        SELECT ID,
+        NAME,DESCRIPTION,CREATE_TIME,MODIFY_TIME,
+        CREATE_EMP,
+        MODIFY_EMP,
+        REMARK
+
+        FROM
+        <include refid="table_name"></include>
+        where id = #{id}
+
+    </select>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.order.dao.OrderDao">
+    <sql id="tableName">
+        T_ORDER
+    </sql>
+    <resultMap id="OrderResultMap" type="com.ucar.team.seven.tea.order.vo.OrderVo">
+        <id property="orderId" column="orderId"/>
+        <result property="orderNumber" column="ORDER_NUMBER"/>
+        <result property="userName" column="USERNAME"/>
+        <result property="price" column="PRICE"/>
+        <result property="orderStatus" column="STATUS"/>
+        <result property="address" column="ADDRESS"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="receiptPhone" column="RECEIPT_PHONE"/>
+        <result property="receiptName" column="RECEIPT_NAME"/>
+        <collection property="goodsOrderVos" javaType="ArrayList"
+                    column="orderId" ofType="com.ucar.team.seven.tea.order.vo.GoodsOrderVo"
+                    select="com.ucar.team.seven.tea.goods.dao.GoodsDao.selectGoodsOrderByOrderId" fetchType="lazy">
+            <id property="goodsId" column="GOODS_ID"/>
+            <result property="quantity" column="quantity"/>
+            <result property="totalPrice" column="total_price"/>
+            <result property="orderId" column="order_id"/>
+            <result property="goodsName" column="goods_name"/>
+            <result property="imageUrl" column="pic_url"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="OrderDetailResultMap" type="com.ucar.team.seven.tea.order.vo.OrderDetailVo">
+        <id property="orderId" column="orderId"/>
+        <result property="orderNumber" column="orderNumber"/>
+        <result property="userName" column="USERNAME"/>
+        <result property="price" column="price"/>
+        <result property="orderRemark" column="orderRemark"/>
+        <result property="orderStatus" column="orderStatus"/>
+        <result property="address" column="ADDRESS"/>
+        <result property="createTime" column="orderCreateTime"/>
+        <result property="receiptPhone" column="receiptPhone"/>
+        <result property="receiptName" column="receiptName"/>
+        <collection property="goodsOrderVos" javaType="ArrayList"
+                    ofType="com.ucar.team.seven.tea.order.vo.GoodsOrderVo">
+            <id property="goodsId" column="GOODS_ID"/>
+            <result property="quantity" column="quantity"/>
+            <result property="totalPrice" column="totalPrice"/>
+            <result property="goodsName" column="goodsName"/>
+            <result property="imageUrl" column="pic_url"/>
+        </collection>
+    </resultMap>
+
+    <sql id="Field">
+		ID,ORDER_NUMBER,CUSTOMER_ID,PRICE,STATUS,ADDRESS,RECEIPT_NAME,RECEIPT_PHONE,ORDER_REMARK,
+		PAY_TIME,SHIP_TIME,RECEIPT_TIME,CREATE_EMP,CREATE_TIME,MODIFY_EMP,MODIFY_TIME,REMARK,IS_DELETE
+	</sql>
+<!--查询所有用户的所有订单，根据订单创建时间排序-->
+    <select id="queryAllUserOrder" resultMap="OrderResultMap">
+        SELECT
+        o.id as orderId,
+        ORDER_NUMBER as orderNumber,
+        o.PRICE as price,
+        o.STATUS as orderStatus,
+        ADDRESS as address,
+        RECEIPT_NAME as receiptName,
+        o.CREATE_TIME as createTime,
+        RECEIPT_PHONE as receiptPhone,
+        ORDER_REMARK as orderRemark,
+        u.USERNAME as userName
+		FROM
+		<include refid="tableName"></include> o
+        left join T_CUSTOMER u on u.id=o.customer_id
+        <where>
+            <if test="params!=null">
+                <if test="params.orderNumber!=null and params.orderNumber!=''">
+                    and ORDER_NUMBER LIKE CONCAT( CONCAT('%',#{params.orderNumber}), '%')
+                </if>
+                <if test="params.userName!=null and params.userName!=''">
+                    and u.USERNAME LIKE CONCAT( CONCAT('%',#{params.userName}), '%')
+                </if>
+                <if test="params.orderStatus!=null">
+                    and o.STATUS = #{params.orderStatus}
+                </if>
+            </if>
+        </where>
+        ORDER BY o.CREATE_TIME desc
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+
+    <!--所有订单的总条数-->
+    <select id="allCount" resultType="java.lang.Long">
+        SELECT count(ORDER_NUMBER)FROM
+        <include refid="tableName"></include>
+    </select>
+
+    <!--用户的所有订单数-->
+    <select id="customerAllCount" resultType="java.lang.Long">
+        SELECT count(ORDER_NUMBER)FROM
+        <include refid="tableName"></include>
+        where CUSTOMER_ID=#{params.userId}
+    </select>
+
+
+    <!--通过订单号查询订单orderVo-->
+    <select id="selectByOrderNumber" resultMap="OrderResultMap">
+        SELECT
+        o.id as orderId,
+        ORDER_NUMBER as orderNumber,
+        PRICE as price,
+        o.STATUS as orderStatus,
+        ADDRESS as address,
+        RECEIPT_NAME as receiptName,
+        o.CREATE_TIME as createTime,
+        RECEIPT_PHONE as receiptPhone,
+        ORDER_REMARK as orderRemark,
+        u.USERNAME as userName
+        FROM
+        <include refid="tableName"></include> o
+        join T_CUSTOMER u on u.id=o.customer_id
+        and o.ORDER_NUMBER=#{params.orderNumber}
+    </select>
+
+    <!--通过订单号得到详细的订单信息-->
+    <select id="orderDetail" resultMap="OrderDetailResultMap">
+        SELECT
+        o.id as orderId,
+        o.ORDER_NUMBER as orderNumber,
+        o.PRICE as price,
+        o.STATUS as orderStatus,
+        ADDRESS as address,
+        RECEIPT_NAME as receiptName,
+        o.CREATE_TIME as orderCreateTime,
+        RECEIPT_PHONE as receiptPhone,
+        ORDER_REMARK as orderRemark,
+        u.USERNAME as userName,
+        g.goods_name as goodsName,
+        gr.QUANTITY as quantity,
+        gr.TOTAL_PRICE as totalPrice,
+        g.PIC_URL as pic_url
+        FROM
+        <include refid="tableName"></include> o
+        left join T_CUSTOMER u on u.id=o.customer_id
+        left join T_GOODS_ORDER gr on gr.ORDER_ID=o.ID
+        left join T_GOODS g on g.id=gr.GOODS_ID
+        WHERE o.ORDER_NUMBER=#{params.orderNumber}
+    </select>
+
+    <!--客户新增订单-->
+    <insert id="insert"
+            parameterType="com.ucar.team.seven.tea.order.entity.Order"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO
+        <include refid="tableName"></include>
+        (ORDER_NUMBER,CUSTOMER_ID,PRICE,STATUS,ADDRESS,RECEIPT_NAME,RECEIPT_PHONE,ORDER_REMARK,CREATE_EMP,CREATE_TIME,MODIFY_EMP,MODIFY_TIME,REMARK,IS_DELETE )
+        VALUES (#{orderNumber},#{customerId},#{price},#{status},#{address},#{receiptName},#{receiptPhone},#{orderRemark},
+        #{createEmp},NOW(),#{modifyEmp},NOW(),#{remark},1)
+    </insert>
+
+    <!--修改订单总价-->
+    <update id="updateOrderPirce">
+        set PRICE=#{params.price},
+        MODIFY_EMP=#{params.modifyId},
+        MODIFY_TIME=NOW(),
+        SHIP_TIME=NOW()
+        where
+        ORDER_NUMBER=#{params.orderNumber}
+    </update>
+
+    <!--客户删除订单-->
+    <update id="deleteOrder">
+        update
+        <include refid="tableName"></include>
+        set IS_DELETE=0,
+        MODIFY_EMP=#{params.modifyId},
+        MODIFY_TIME=NOW()
+        where
+        ORDER_NUMBER=#{params.orderNumber}
+    </update>
+
+
+
+    <!--申请取消订单
+    后台改变订单状态
+    -->
+    <update id="updateOrderStatus">
+        update
+        <include refid="tableName"></include>
+        set  STATUS=#{params.orderStatus},
+        MODIFY_EMP=#{params.modifyId},
+        MODIFY_TIME=NOW()
+        where
+        ORDER_NUMBER=#{params.orderNumber}
+    </update>
+
+    <!--通过订单号查询订单实体-->
+    <select id="queryByOrderNumber"
+            resultType="com.ucar.team.seven.tea.order.entity.Order">
+        select ID,
+        ORDER_NUMBER orderNumber,
+        CUSTOMER_ID customerId,
+        PRICE price,
+        STATUS status,
+        ADDRESS,
+        RECEIPT_NAME receiptName,
+        RECEIPT_PHONE receiptPhone,
+        ORDER_REMARK orderRemark
+        from <include refid="tableName"></include>
+        where ORDER_NUMBER=#{orderNumber}
+    </select>
+
+    <!--客户所有订单-->
+    <select id="customerOrder" resultMap="OrderResultMap">
+        SELECT
+        o.id as orderId,
+        ORDER_NUMBER as orderNumber,
+        o.PRICE as price,
+        o.STATUS as orderStatus,
+        ADDRESS as address,
+        RECEIPT_NAME as receiptName,
+        o.CREATE_TIME as createTime,
+        RECEIPT_PHONE as receiptPhone,
+        ORDER_REMARK as orderRemark,
+        u.USERNAME as userName
+        FROM
+        <include refid="tableName"></include> o
+        left join T_CUSTOMER u on u.id=o.customer_id
+        where IS_DELETE=1 and o.customer_id=#{params.userId}
+            <if test="params!=null">
+                <if test="params.orderNumber!=null and params.orderNumber!=''">
+                    and ORDER_NUMBER = #{params.orderNumber}
+                </if>
+                <if test="params.userName!=null and params.userName!=''">
+                    and u.USERNAME LIKE CONCAT( CONCAT('%',#{params.userName}), '%')
+                </if>
+                <if test="params.orderStatus!=null">
+                    and o.STATUS = #{params.orderStatus}
+                </if>
+            </if>
+        ORDER BY o.CREATE_TIME desc
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+
+    <!--通过用户名进行模糊查询-->
+    <select id="queryOrdersByUser" resultMap="OrderResultMap">
+        select
+        o.id as orderId,
+        ORDER_NUMBER as orderNumber,
+        PRICE as price,
+        o.STATUS as orderStatus,
+        ADDRESS as address,
+        RECEIPT_NAME as receiptName,
+        o.CREATE_TIME as createTime,
+        RECEIPT_PHONE as receiptPhone,
+        ORDER_REMARK as orderRemark,
+        u.USERNAME as userName
+        from
+        <include refid="tableName"></include> o
+        left join T_CUSTOMER u on u.username LIKE CONCAT( '%',#{userName}, '%')
+        and u.id=o.customer_id
+        ORDER BY o.CREATE_TIME desc
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+
+
+    <!--通过订单状态查询 分页查询-->
+
+    <select id="queryOrderByStatus" resultMap="OrderResultMap">
+        select
+        o.id as orderId,
+        ORDER_NUMBER as orderNumber,
+        PRICE as price,
+        o.STATUS as orderStatus,
+        ADDRESS as address,
+        RECEIPT_NAME as receiptName,
+        o.CREATE_TIME as createTime,
+        RECEIPT_PHONE as receiptPhone,
+        ORDER_REMARK as orderRemark,
+        u.USERNAME as userName
+        from
+        <include refid="tableName"></include> o
+        join T_CUSTOMER u on u.id=o.customer_id
+        where
+        IS_DELETE=1
+        and o.status=#{params.singleStauts}
+        <if test="params!=null">
+            <if test="params.pendingRefund!=null">
+                or o.status = #{params.pendingRefund}
+            </if>
+            <if test="params.cacneled!=null">
+                or o.status = #{params.cacneled}
+            </if>
+        </if>
+        and o.customer_id=#{params.userId}
+        ORDER BY o.CREATE_TIME desc
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+
+</mapper>

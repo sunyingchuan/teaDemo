@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ucar.team.seven.tea.point.dao.PointLogDao">
+    <resultMap id="BaseResultMap" type="com.ucar.team.seven.tea.point.entity.PointLog">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="customer_id" property="customerId" jdbcType="BIGINT"/>
+        <result column="order_id" property="orderId" jdbcType="BIGINT"/>
+        <result column="money" property="money" jdbcType="DECIMAL"/>
+        <result column="point" property="point" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_emp" property="createEmp" jdbcType="BIGINT"/>
+        <result column="modify_time" property="modifyTime" jdbcType="TIMESTAMP"/>
+        <result column="modify_emp" property="modifyEmp" jdbcType="BIGINT"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="order_number" property="orderNumber" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="tableName">
+		t_point_log
+	</sql>
+
+    <sql id="Base_Column_List">
+        id, customer_id, order_id, money, point, create_time, create_emp, modify_time, modify_emp, remark, description, order_number
+    </sql>
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long">
+        select
+        <include refid="Base_Column_List"/>
+        from t_point_log
+        where id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <insert id="insertS" parameterType="com.ucar.team.seven.tea.point.entity.PointLog">
+        insert into t_point_log (customer_id, order_id,
+          money, point, create_time,
+          create_emp, modify_time, modify_emp,
+          remark, description, order_number)
+        values (#{customerId,jdbcType=BIGINT}, #{orderId,jdbcType=BIGINT},
+          #{money,jdbcType=DECIMAL}, #{point,jdbcType=INTEGER}, NOW(),
+          #{createEmp,jdbcType=BIGINT}, NOW(), #{modifyEmp,jdbcType=BIGINT},
+          #{remark,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{orderNumber,jdbcType=VARCHAR})
+    </insert>
+    <insert id="insert" parameterType="com.ucar.team.seven.tea.point.entity.PointLog">
+        insert into t_point_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="customerId != null">
+                customer_id,
+            </if>
+            <if test="orderId != null">
+                order_id,
+            </if>
+            <if test="money != null">
+                money,
+            </if>
+            <if test="point != null">
+                point,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="createEmp != null">
+                create_emp,
+            </if>
+            <if test="modifyTime != null">
+                modify_time,
+            </if>
+            <if test="modifyEmp != null">
+                modify_emp,
+            </if>
+            <if test="remark != null">
+                remark,
+            </if>
+            <if test="description != null">
+                description,
+            </if>
+            <if test="orderNumber != null">
+                order_number,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="customerId != null">
+                #{customerId,jdbcType=BIGINT},
+            </if>
+            <if test="orderId != null">
+                #{orderId,jdbcType=BIGINT},
+            </if>
+            <if test="money != null">
+                #{money,jdbcType=DECIMAL},
+            </if>
+            <if test="point != null">
+                #{point,jdbcType=INTEGER},
+            </if>
+            <if test="createTime != null">
+                NOW(),
+            </if>
+            <if test="createEmp != null">
+                #{createEmp,jdbcType=BIGINT},
+            </if>
+            <if test="modifyTime != null">
+                #{modifyTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifyEmp != null">
+                #{modifyEmp,jdbcType=BIGINT},
+            </if>
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null">
+                #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="orderNumber != null">
+                #{orderNumber,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 查询记录总条数 -->
+    <select id="getCount"
+            parameterType="com.ucar.team.seven.tea.point.vo.params.PointParamVo"
+            resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM t_point_log as pl
+        left join t_customer as ct on pl.customer_id = ct.id
+        left join t_sys_user as su on pl.create_emp = su.id
+        <where>
+            1 = 1
+            <if test="params!=null">
+                <if test="params.customerId!=null and params.customerId!=''">
+                    AND pl.CUSTOMER_ID = #{params.customerId}
+                </if>
+                <if test="params.orderNumber!=null and params.orderNumber!=''">
+                    AND pl.ORDER_NUMBER = #{params.orderNumber}
+                </if>
+                <if test="params.point!=null and params.point!=''">
+                    AND pl.POINT = #{params.point}
+                </if>
+                <if test="params.username!=null and params.username!=''">
+                    AND ct.USERNAME LIKE CONCAT( #{params.username}, '%')
+                </if>
+                <if test="params.startDate!= null and params.startDate!=''">
+                    AND <![CDATA[ pl.CREATE_TIME >=  #{params.startDate} ]]>
+                </if>
+                <if test="params.endDate!= null and params.endDate!=''">
+                    AND <![CDATA[ pl.CREATE_TIME < DATE_ADD(#{params.endDate},INTERVAL 1 DAY) ]]>
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询积分记录列表 -->
+    <select id="findPage" resultType="com.ucar.team.seven.tea.point.vo.PointLogVo">
+        SELECT
+        pl.ID id,
+        pl.POINT point,
+        pl.MONEY money,
+        pl.REMARK remark,
+        pl.ORDER_ID orderId,
+        pl.CUSTOMER_ID customerId,
+        pl.CREATE_TIME createTime,
+        pl.MODIFY_TIME modifyTime,
+        pl.CREATE_EMP createEmp,
+        pl.MODIFY_EMP modifyEmp,
+        pl.DESCRIPTION description,
+        pl.ORDER_NUMBER orderNumber,
+        ct.username username,
+        su.username createEmpName
+        FROM t_point_log as pl
+        left join t_customer as ct on pl.customer_id = ct.id
+        left join t_sys_user as su on pl.create_emp = su.id
+        <where>
+            1 = 1
+            <if test="params!=null">
+                <if test="params.customerId!=null and params.customerId!=''">
+                    AND pl.CUSTOMER_ID = #{params.customerId}
+                </if>
+                <if test="params.orderNumber!=null and params.orderNumber!=''">
+                    AND pl.ORDER_NUMBER LIKE CONCAT( #{params.orderNumber}, '%')
+                </if>
+                <if test="params.point!=null and params.point!=''">
+                    AND pl.POINT = #{params.point}
+                </if>
+                <if test="params.username!=null and params.username!=''">
+                    AND ct.USERNAME LIKE CONCAT( #{params.username}, '%')
+                </if>
+                <if test="params.startDate!= null and params.startDate!=''">
+                    AND <![CDATA[ pl.CREATE_TIME >=  #{params.startDate} ]]>
+                </if>
+                <if test="params.endDate!= null and params.endDate!=''">
+                    AND <![CDATA[ pl.CREATE_TIME < DATE_ADD(#{params.endDate},INTERVAL 1 DAY) ]]>
+                </if>
+            </if>
+        </where>
+        order by pl.id DESC
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+
+    <!-- 后台人员批量新增-->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO
+        <include refid="tableName"/>
+        (CREATE_TIME,MODIFY_TIME,CREATE_EMP,POINT,CUSTOMER_ID,DESCRIPTION)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            NOW(),
+            NOW(),
+            #{item.createEmp},
+            #{item.point},
+            #{item.customerId},
+            #{item.description}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据客户id查询积分记录信息 -->
+    <select id="getById"
+            parameterType="java.lang.Long"
+            resultType="java.util.List">
+        SELECT
+        pl.POINT point,
+        pl.MONEY money,
+        pl.REMARK remark,
+        pl.ORDER_ID orderId,
+        pl.CUSTOMER_ID customerId,
+        pl.CREATE_TIME createTime,
+        pl.MODIFY_TIME modifyTime,
+        pl.CREATE_EMP createEmp,
+        pl.MODIFY_EMP modifyEmp,
+        pl.DESCRIPTION description,
+        pl.ORDER_NUMBER orderNumber,
+        FROM
+        <include refid="tableName"></include>
+        WHERE
+        customer_id = #{id}
+        order by pl.id DESC
+    </select>
+</mapper>

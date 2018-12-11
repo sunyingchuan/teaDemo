@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.goods.dao.GoodsDao">
+
+    <!--表名 -->
+    <sql id="tableName">
+		T_GOODS
+	</sql>
+
+    <!-- 字段 -->
+    <sql id="Field">
+		ID,GOODS_CATEGORY_ID,GOODS_NAME,PRICE,STOCK,STATUS,PIC_URL,DESCRIPTION,CREATE_EMP,CREATE_TIME,MODIFY_EMP,MODIFY_TIME
+	</sql>
+
+    <!-- 查询商品列表 -->
+    <select id="findPage" resultType="com.ucar.team.seven.tea.goods.vo.GoodsVo">
+        SELECT
+        g.ID,g.GOODS_CATEGORY_ID goodsCategoryId,
+        g.GOODS_NAME goodsName,g.PRICE,g.STOCK,g.STATUS,g.PIC_URL picUrl,g.DESCRIPTION,
+        g.CREATE_TIME createTime,
+        g.MODIFY_TIME modifyTime,
+        g.CREATE_EMP createEmp,
+        g.MODIFY_EMP modifyEmp,
+        c.category_name categoryName,
+        su.username createEmpName,
+        tsu.username modifyEmpName
+        FROM
+        <include refid="tableName"></include> g
+        left join T_Goods_CATEGORY c on g.goods_category_id=c.id
+        left join t_sys_user as su on g.create_emp = su.id
+        left join t_sys_user as tsu on g.modify_emp = tsu.id
+        <where>
+            <if test="params!=null">
+                <if test="params.id!=null and params.id!=''">
+                    g.ID = #{params.id}
+                </if>
+                <if test="params.goodsName!=null and params.goodsName!=''">
+                    and g.GOODS_NAME LIKE CONCAT( #{params.goodsName}, '%')
+                </if>
+                <if test="params.priceStart!=null and params.priceStart!='' and params.priceEnd!='' and params.priceEnd!=''">
+                    and g.PRICE BETWEEN #{params.priceStart} AND #{params.priceEnd}
+                </if>
+                <if test="params.status!=null">
+                   and g.STATUS = #{params.status}
+                </if>
+            </if>
+        </where>
+        ORDER BY g.ID desc
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+    <!-- 查询记录总条数 -->
+    <select id="getCount"
+            parameterType="com.ucar.team.seven.tea.goods.vo.params.GoodsParamVo"
+            resultType="java.lang.Long">
+        SELECT COUNT(1) FROM
+        <include refid="tableName"></include>g
+        left join T_Goods_CATEGORY c on g.goods_category_id=c.id
+        <where>
+            <if test="params!=null">
+                <if test="params.id!=null and params.id!=''">
+                    g.ID = #{params.id}
+                </if>
+                <if test="params.goodsName!=null and params.goodsName!=''">
+                  and g.GOODS_NAME LIKE CONCAT( #{params.goodsName}, '%')
+                </if>
+                <if test="params.priceStart!=null and params.priceStart!='' and params.priceEnd!='' and params.priceEnd!=''">
+                  and g.PRICE BETWEEN #{params.priceStart} AND #{params.priceEnd}
+                </if>
+                <if test="params.status!=null">
+                  and g.STATUS = #{params.status}
+                </if>
+            </if>
+        </where>
+    </select>
+    <!-- 保存商品信息 -->
+    <insert id="insert"
+            parameterType="com.ucar.team.seven.tea.goods.entity.Goods"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO
+        <include refid="tableName"></include>
+        (GOODS_CATEGORY_ID,GOODS_NAME,PRICE,STOCK,STATUS,PIC_URL,DESCRIPTION,CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP)
+        VALUES
+        (#{goodsCategoryId},#{goodsName},#{price},#{stock},#{status},
+        #{picUrl},#{description},NOW(),NOW(),#{createEmp},#{modifyEmp});
+    </insert>
+
+    <!-- 根据id查询商品信息 -->
+    <select id="getByGoodsId"
+            parameterType="java.lang.Long"
+            resultType="com.ucar.team.seven.tea.goods.vo.GoodsVo">
+        SELECT
+        g.ID,g.GOODS_CATEGORY_ID goodsCategoryId,
+        g.GOODS_NAME goodsName,g.PRICE,g.STOCK,g.STATUS,g.PIC_URL picUrl,g.DESCRIPTION,
+        g.CREATE_TIME createTime,
+        g.MODIFY_TIME modifyTime,
+        g.CREATE_EMP createEmp,
+        g.MODIFY_EMP modifyEmp,
+        c.category_name categoryName
+        FROM
+        <include refid="tableName"></include> g
+        left join T_Goods_CATEGORY c on g.goods_category_id=c.id
+        WHERE
+        g.ID = #{id}
+    </select>
+
+    <!--根据订单id查询订单关联的所有商品-->
+    <select id="selectGoodsOrderByOrderId" resultType="com.ucar.team.seven.tea.order.vo.GoodsOrderVo">
+        select g.ID as goodsId,
+        g.goods_name as goodsName,
+        g.pic_url as imageUrl,
+        gr.quantity as quantity,
+        gr.total_price as totalPrice,
+        gr.order_id as orderId
+        from <include refid="tableName"></include> g
+        join T_GOODS_ORDER gr on gr.GOODS_ID=g.ID
+        and gr.order_id=#{orderId}
+    </select>
+
+    <!-- 修改更新商品信息 -->
+    <update id="update"
+            parameterType="com.ucar.team.seven.tea.goods.entity.Goods">
+        UPDATE
+        <include refid="tableName"></include>
+        SET
+        GOODS_CATEGORY_ID=#{goodsCategoryId},
+        GOODS_NAME=#{goodsName},
+        PRICE=#{price},
+        STOCK=#{stock},
+        STATUS=#{status},
+        PIC_URL=#{picUrl},
+        DESCRIPTION=#{description},
+        MODIFY_TIME = NOW(),
+        MODIFY_EMP = #{modifyEmp}
+        WHERE
+        ID = #{id}
+    </update>
+
+    <!-- 切换商品上/下架状态 -->
+    <update id="updateStatus">
+        UPDATE
+        <include refid="tableName"></include>
+        SET
+        STATUS = #{status}
+        WHERE
+        ID = #{id}
+    </update>
+
+    <!-- 批量上/下架-->
+    <update id="batchStatus">
+        UPDATE
+        <include refid="tableName"></include>
+        SET
+        STATUS = #{status}
+        WHERE id IN
+        <foreach collection="ids" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 根据分类code查询商品信息 -->
+    <select id="getByCode"
+            parameterType="java.lang.String"
+            resultType="com.ucar.team.seven.tea.goods.vo.GoodsVo">
+        SELECT
+        g.ID,g.GOODS_CATEGORY_ID goodsCategoryId,
+        g.GOODS_NAME goodsName,g.PRICE,g.STOCK,g.STATUS,g.PIC_URL picUrl,g.DESCRIPTION,
+        g.CREATE_TIME createTime,
+        g.MODIFY_TIME modifyTime,
+        g.CREATE_EMP createEmp,
+        g.MODIFY_EMP modifyEmp,
+        c.category_name categoryName
+        FROM
+        <include refid="tableName"></include> g
+        left join T_Goods_CATEGORY c on g.goods_category_id=c.id
+        <where>
+            <if test="params!=null">
+            <if test="params.code!=null and params.code!=''">
+                c.code like CONCAT( #{params.code}, '%') and c.pid >0
+            </if>
+            </if>
+            and STATUS = 1
+        </where>
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+
+</mapper>

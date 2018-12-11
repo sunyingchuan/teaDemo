@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.system.dao.SysPermissionDao">
+    <resultMap id="BaseResultMap" type="com.ucar.team.seven.tea.system.entity.SysPermission">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="pid" jdbcType="BIGINT" property="pid" />
+        <result column="parent_name" jdbcType="VARCHAR" property="parentName" />
+        <result column="type" jdbcType="TINYINT" property="type" />
+        <result column="url" jdbcType="VARCHAR" property="url" />
+        <result column="code" jdbcType="VARCHAR" property="code" />
+        <result column="color" jdbcType="VARCHAR" property="color" />
+        <result column="sort" jdbcType="TINYINT" property="sort" />
+        <result column="color" jdbcType="VARCHAR" property="color" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="create_emp" jdbcType="BIGINT" property="createEmp" />
+        <result column="modify_emp" jdbcType="BIGINT" property="modifyEmp" />
+        <result column="modify_time" jdbcType="TIMESTAMP" property="modifyTime" />
+        <result column="remark" jdbcType="VARCHAR" property="remark" />
+        <collection property="children" column="id" select="com.ucar.team.seven.tea.system.dao.SysPermissionDao.getChildrenByParentId"></collection>
+    </resultMap>
+
+
+
+    <!--表名 -->
+    <sql id="tableName">
+		t_sys_permission
+	</sql>
+
+    <!-- 字段 -->
+    <sql id="Field">
+    </sql>
+
+    <select id="getChildrenByParentId" parameterType="java.lang.Long" resultType="com.ucar.team.seven.tea.system.entity.SysPermission">
+      SELECT
+			p.id as id,
+			p.name,
+			p.url,
+			p.sort,
+			p.type,
+			p.pid,
+			p.code,
+			p.color,
+			p.icon,
+            p.CREATE_TIME,
+            p.MODIFY_TIME,
+            p.CREATE_EMP,
+            p.MODIFY_EMP,
+            p.REMARK
+		FROM
+			<include refid="tableName"></include> p
+		WHERE
+			p.pid = #{id}
+    </select>
+
+    <select id="getPermissionList" parameterType="java.lang.Long"
+            resultType="com.ucar.team.seven.tea.system.entity.SysPermission">
+		SELECT
+			p.id as id,
+			p.name,
+			p.url,
+			p.sort,
+			p.type,
+			p.pid,
+			p.code,
+			p.color,
+			p.icon,
+			p.CREATE_TIME,
+            p.MODIFY_TIME,
+            p.CREATE_EMP,
+            p.MODIFY_EMP,
+            p.REMARK
+		FROM
+			t_sys_permission p
+		INNER JOIN
+			t_sys_role_permission rp ON p.id = rp.permission_id
+		INNER JOIN
+			t_sys_user_role ur ON rp.role_id = ur.role_id
+		WHERE
+			ur.user_id = #{userId}
+		ORDER BY
+			p.pid ASC,p.sort ASC;
+	</select>
+
+    <select id="getPermissionListByRoleId" parameterType="java.lang.Long"
+            resultType="com.ucar.team.seven.tea.system.entity.SysPermission">
+		SELECT
+			permission_id as id
+		FROM
+			t_sys_role_permission
+		WHERE
+			role_id = #{roleId}
+	</select>
+
+
+    <select id="getList" resultType="com.ucar.team.seven.tea.system.entity.SysPermission">
+        SELECT * from
+        <include refid="tableName"/>
+    </select>
+
+    <select id="getTotalNum" resultType="java.lang.Long">
+        select count(id) from
+        <include refid="tableName"></include>
+    </select>
+
+    <select id="getListByQuery" parameterType="com.ucar.team.seven.tea.system.vo.SysPermissionQuery" resultMap="BaseResultMap">
+        SELECT
+        ID,NAME,PID,PARENT_NAME,TYPE,URL,CODE,COLOR,ICON,SORT,CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP,REMARK
+        FROM
+        <include refid="tableName"></include>
+        <where>
+            <if test="name!=null and name!=''">
+                NAME LIKE CONCAT( #{name}, '%')
+            </if>
+            <if test="code!=null and code!=''">
+                and CODE LIKE CONCAT( #{CODE}, '%')
+            </if>
+
+        </where>
+        ORDER BY PID ASC,SORT ASC
+
+        LIMIT #{pageOffset},#{pageLimit}
+
+    </select>
+
+    <select id="getParentNameList" resultMap="BaseResultMap" parameterType="java.util.List">
+        SELECT
+        ID,NAME,PID,PARENT_NAME,
+        TYPE,URL,CODE,COLOR,ICON,SORT,
+        CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP,REMARK
+        FROM
+        <include refid="tableName"></include>
+        <if test="list!=null and list.size()!=0">
+            WHERE TYPE IN
+            <foreach collection="list" item="parentMenuNum"
+                     index="index" open="(" close=")" separator=",">
+                #{parentMenuNum}
+            </foreach>
+        </if>
+
+    </select>
+
+    <select id="getById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        ID,NAME,PID,PARENT_NAME,
+        TYPE,URL,CODE,COLOR,ICON,SORT,CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP,REMARK
+        FROM
+        <include refid="tableName"></include>
+        where ID = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.ucar.team.seven.tea.system.entity.SysPermission">
+        INSERT INTO
+        <include refid="tableName"></include>
+        (name,pid,parent_name,type,url,code,sort,color,icon,create_time,modify_time,create_emp,modify_emp,remark)
+        values
+        (
+        #{name},
+        #{pid},
+        #{parentName},
+        #{type},
+        #{url},
+        #{code},
+        #{sort},
+        #{color},
+        #{icon},
+        #{createTime},
+        #{modifyTime},
+        #{createEmp},
+        #{modifyEmp},
+        #{remark}
+
+        )
+
+    </insert>
+
+    <update id="update" parameterType="com.ucar.team.seven.tea.system.entity.SysPermission" >
+        update
+        <include refid="tableName"></include>
+        set
+        name = #{name},
+        pid = #{pid},
+        parent_name = #{parentName},
+        type = #{ type },
+        url = #{ url },
+        code = #{ code },
+        sort = #{sort},
+        color = #{color},
+        icon = #{icon},
+        create_time = #{createTime},
+        modify_time = #{ modifyTime },
+        create_emp = #{ createEmp },
+        modify_emp = #{ modifyEmp },
+        remark = #{remark}
+
+        where id = #{id}
+
+    </update>
+
+    <delete id="deleteBatch">
+        delete from
+        <include refid="tableName"></include>
+        <if test="array!= null">
+            where id in
+            (
+            <foreach collection="array" item="roleId" index="index" separator=",">
+                #{roleId}
+            </foreach>
+
+            )
+
+        </if>
+
+    </delete>
+
+
+
+</mapper>

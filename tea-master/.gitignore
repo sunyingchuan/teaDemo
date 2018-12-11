@@ -1,0 +1,7 @@
+# Ignore files
+.DS_store
+.idea/
+target/
+*.iml
+src/main/resources/config.properties
+*.log

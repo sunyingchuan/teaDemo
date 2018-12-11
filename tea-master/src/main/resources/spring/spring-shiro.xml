@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- shiro工厂bean配置 -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <!-- shiro的核心安全接口 -->
+        <property name="securityManager" ref="securityManager"/>
+        <!-- 要求登录时的连接 -->
+        <property name="loginUrl" value="/loginUI.do"></property>
+        <!-- 登录成功后要跳转的连接(此处已经在登录中处理了) -->
+        <!-- <property name="successUrl" value="/index.jsp"></property> -->
+        <!-- 访问未对其授权的资源时,要跳转的连接
+        <property name="unauthorizedUrl" value="/default.html"></property>-->
+        <!-- shiro连接约束配置 -->
+        <property name="filterChainDefinitions">
+            <value>
+                <!-- 对静态资源设置允许匿名访问 -->
+                /images/** = anon
+                /js/** = anon
+                /css/** = anon
+                /static/** = anon
+                <!--针对swagger的访问路径允许匿名访问-->
+                /swagger-ui.html = anon
+                /webjars/** = anon
+                /configuration/ui = anon
+                /swagger-resources = anon
+                /v2/api-docs = anon
+                <!--微信小程序接口允许匿名访问-->
+                /wxapi/** = anon
+                <!--登录连接 -->
+                /login.do = anon
+                <!-- 退出 -->
+                /logout.do = logout  <!-- 会调用Subject的logout方法,此方法会将session清空 -->
+                <!-- 剩余其他路径，必须认证通过才可以访问 -->
+                /** = authc
+            </value>
+        </property>
+    </bean>
+    <!-- 配置shiro安全管理器 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="shiroUserRealm"></property>
+    </bean>
+    <!-- 自定义Realm -->
+    <bean id="shiroUserRealm" class="com.ucar.team.seven.tea.common.service.impl.ShiroUserRealm">
+        <!-- 配置凭证算法匹配器 -->
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="MD5"/>
+                <!-- <property name="hashIterations" value="1024"/> -->
+            </bean>
+        </property>
+    </bean>
+
+    <!--Shiro生命周期处理器-->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+</beans>

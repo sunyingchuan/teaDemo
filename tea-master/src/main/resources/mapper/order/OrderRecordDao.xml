@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.order.dao.OrderRecordDao">
+    <sql id="tableName">
+        T_ORDER_RECORD
+    </sql>
+
+    <sql id="Field">
+		ID,ORDER_NUMBER,OPERATOR_TIME,OPERATOR,OPERATOR_REMARK,CREATE_EMP,CREATE_TIME,MODIFY_EMP,MODIFY_TIME,REMARK
+	</sql>
+
+    <!--新增订单记录-->
+    <insert id="insert">
+        insert into
+        <include refid="tableName"></include>
+        (ORDER_NUMBER,OPERATOR_TIME,OPERATOR,OPERATOR_REMARK,CREATE_EMP,CREATE_TIME,MODIFY_EMP,MODIFY_TIME,REMARK)
+        values (#{orderNumber},NOW(),#{operator},#{operatorRemark},#{createEmp},NOW(),#{modifyEmp},NOW(),#{remark})
+    </insert>
+
+    <!--通过订单号查询-->
+    <select id="queryByOrderNumber" resultType="com.ucar.team.seven.tea.order.vo.OrderRecordVo">
+        select OPERATOR_TIME as operatorTime,
+        OPERATOR as operator,
+        OPERATOR_REMARK as operatorRemark,
+        r.CREATE_EMP as createEmp,
+        r.CREATE_TIME as createTime,
+        r.MODIFY_EMP as modifyEmp,
+        r.MODIFY_TIME as modifyTime,
+        s.username as modifyName
+        from
+        <include refid="tableName"></include> r
+        left join t_sys_user s on s.id= r.CREATE_EMP
+        where ORDER_NUMBER=#{params.orderNumber}
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+
+    <!--通过查询某订单的记录数-->
+    <select id="orderRecordNum" resultType="java.lang.Long">
+        SELECT count(ORDER_NUMBER)FROM
+        <include refid="tableName"></include>
+        where ORDER_NUMBER=#{orderNumber}
+    </select>
+</mapper>

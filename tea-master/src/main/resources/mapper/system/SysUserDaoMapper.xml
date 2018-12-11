@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.system.dao.SysUserDao">
+
+    <!--表名 -->
+    <sql id="tableName">
+		T_SYS_USER
+	</sql>
+
+    <!-- 字段 -->
+    <sql id="Field">
+		ID,USERNAME,PASSWORD,SEX,EMAIL,MOBILE,STATUS,CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP
+	</sql>
+
+    <!-- 查询用户列表 -->
+    <select id="findPage" resultType="com.ucar.team.seven.tea.system.vo.UserVo">
+        SELECT
+            res.ID,
+            res.USERNAME,
+            res.SEX,
+            res.EMAIL,
+            res.MOBILE,
+            res.STATUS,
+            res.CREATE_TIME createTime,
+            res.MODIFY_TIME modifyTime,
+            ce.USERNAME createEmpName,
+            me.USERNAME modifyEmpName,
+            ur.ROLE_ID roleId,
+            sr.name roleName
+        FROM(
+            SELECT
+            tu.ID,
+            tu.USERNAME,
+            tu.SEX,
+            tu.EMAIL,
+            tu.MOBILE,
+            tu.STATUS,
+            tu.CREATE_TIME,
+            tu.MODIFY_TIME,
+            tu.CREATE_EMP,
+            tu.MODIFY_EMP
+            FROM
+            <include refid="tableName"></include>tu
+            <where>
+                <if test="params!=null">
+                    <if test="params.query!=null and params.query!=''">
+                        tu.USERNAME LIKE CONCAT( '%',#{params.query}, '%')
+                        OR tu.MOBILE LIKE CONCAT( '%',#{params.query}, '%')
+                    </if>
+                </if>
+            </where>
+        ) res
+        LEFT JOIN T_SYS_USER ce ON res.CREATE_EMP = ce.ID
+        LEFT JOIN T_SYS_USER me ON res.MODIFY_EMP = me.ID
+        LEFT JOIN T_SYS_USER_ROLE ur ON res.ID = ur.USER_ID
+        LEFT JOIN T_SYS_ROLE sr ON ur.ROLE_ID = sr.ID
+        ORDER BY res.ID ASC
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+    <!-- 查询记录总条数 -->
+    <select id="getCount"
+            parameterType="com.ucar.team.seven.tea.system.vo.params.UserParamVo"
+            resultType="java.lang.Long">
+        SELECT COUNT(1) FROM
+        <include refid="tableName"></include>
+        <where>
+            <if test="params!=null">
+                <if test="params.query!=null and params.query!=''">
+                    USERNAME LIKE CONCAT( '%',#{params.query}, '%')
+                    OR MOBILE LIKE CONCAT( '%',#{params.query}, '%')
+                </if>
+            </if>
+        </where>
+    </select>
+    <!-- 保存用户信息 -->
+    <insert id="insert"
+            parameterType="com.ucar.team.seven.tea.system.entity.SysUser"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO
+        <include refid="tableName"></include>
+        (USERNAME,PASSWORD,SEX,EMAIL,MOBILE,STATUS,CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP)
+        VALUES
+        (#{username},#{password},#{sex},#{email},#{mobile},
+        1,NOW(),NOW(),#{createEmp},#{modifyEmp});
+    </insert>
+
+
+    <!-- 保存用户角色信息 -->
+    <insert id="insertUserRoleRecord"
+            parameterType="com.ucar.team.seven.tea.system.vo.SysUserRoleVo"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO
+        T_SYS_USER_ROLE
+        (USER_ID,ROLE_ID,CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP)
+        VALUES
+        (#{userId},#{roleId},NOW(),NOW(),#{createEmp},#{modifyEmp});
+    </insert>
+
+    <!-- 批量新增-->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO <include refid="tableName"></include>(
+        <include refid="Field"></include>
+        )
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id},
+            #{item.username},
+            #{item.password},
+            #{item.sex},
+            #{item.email},
+            #{item.mobile},
+            #{item.status},
+            NOW(),
+            NOW(),
+            #{item.createEmp},
+            #{item.modifyEmp}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据id查询用户信息 -->
+    <select id="getById"
+            parameterType="java.lang.Long"
+            resultType="com.ucar.team.seven.tea.system.entity.SysUser">
+        SELECT
+        ID,USERNAME,PASSWORD,SEX,EMAIL,MOBILE,STATUS,
+        CREATE_TIME createTime,
+        MODIFY_TIME modifyTime,
+        CREATE_EMP createEmp,
+        MODIFY_EMP modifyEmp
+        FROM
+        <include refid="tableName"></include>
+        WHERE
+        ID = #{id}
+    </select>
+    <!-- 修改更新用户信息 -->
+    <update id="update"
+            parameterType="com.ucar.team.seven.tea.system.entity.SysUser">
+        UPDATE
+        <include refid="tableName"></include>
+        SET
+        USERNAME = #{username},
+        PASSWORD = #{password},
+        <if test="status!=null">
+             STATUS = #{status},
+        </if>
+        SEX = #{sex},
+        EMAIL = #{email},
+        MOBILE = #{mobile},
+        MODIFY_TIME = NOW(),
+        MODIFY_EMP = #{modifyEmp}
+        WHERE
+        ID = #{id}
+    </update>
+
+    <!-- 修改更新用户角色信息 -->
+    <update id="updateUserRole"
+            parameterType="com.ucar.team.seven.tea.system.vo.SysUserRoleVo">
+        UPDATE
+        T_SYS_USER_ROLE
+        SET
+        ROLE_ID = #{roleId},
+        MODIFY_TIME = NOW(),
+        MODIFY_EMP = #{modifyEmp}
+        WHERE
+        USER_ID = #{userId}
+    </update>
+
+    <!-- 根据id删除用户信息 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM
+        <include refid="tableName"></include>
+        WHERE ID=#{id}
+    </delete>
+
+    <!-- 切换用户启用/禁用状态 -->
+    <update id="updateStatus">
+        UPDATE
+        <include refid="tableName"></include>
+        SET
+        STATUS = #{status}
+        WHERE
+        ID = #{id}
+    </update>
+
+    <!-- 根据id查询用户信息 -->
+    <select id="getByUserName"
+            parameterType="java.lang.String"
+            resultType="com.ucar.team.seven.tea.system.entity.SysUser">
+        SELECT
+            ID,USERNAME,PASSWORD,SEX,EMAIL,MOBILE,STATUS,
+            CREATE_TIME createTime,
+            MODIFY_TIME modifyTime,
+            CREATE_EMP createEmp,
+            MODIFY_EMP modifyEmp
+        FROM
+        <include refid="tableName"></include>
+        WHERE
+          USERNAME = #{username}
+    </select>
+</mapper>

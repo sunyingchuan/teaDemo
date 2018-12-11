@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.customer.dao.BalanceRecordDao">
+
+    <!--表名 -->
+    <sql id="tableName">
+		T_BALANCE_RECORD
+	</sql>
+
+    <!-- 字段 -->
+    <sql id="Field">
+		ID,CUSTOMER_ID,TYPE,AMOUNT,ORDER_NUMBER,BALANCE_OLD,BALANCE_NEW,CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP
+	</sql>
+
+    <!-- 查询账单记录列表 -->
+    <select id="findPage" resultType="com.ucar.team.seven.tea.customer.vo.BalanceRecordVo">
+        SELECT
+            res.ID,
+            res.CUSTOMER_ID customerId,
+            res.USERNAME username,
+            res.TYPE,
+            res.AMOUNT,
+            res.ORDER_NUMBER orderNumber,
+            res.BALANCE_OLD balanceOld,
+            res.BALANCE_NEW balanceNew,
+            res.CREATE_TIME createTime,
+            res.MODIFY_TIME modifyTime,
+            ce.USERNAME createEmpName,
+            me.USERNAME modifyEmpName
+        FROM (
+            SELECT
+                tbr.ID,
+                tbr.CUSTOMER_ID,
+                tc.USERNAME,
+                tbr.TYPE,
+                tbr.AMOUNT,
+                tbr.ORDER_NUMBER,
+                tbr.BALANCE_OLD,
+                tbr.BALANCE_NEW,
+                tbr.CREATE_EMP,
+                tbr.MODIFY_EMP,
+                tbr.CREATE_TIME,
+                tbr.MODIFY_TIME
+            FROM
+            <include refid="tableName"></include> tbr
+            LEFT JOIN T_CUSTOMER tc ON tbr.CUSTOMER_ID = tc.ID
+            <where>
+                <if test="params!=null">
+                    <if test="params.customerId!=null and params.customerId!=''">
+                        tbr.CUSTOMER_ID = #{params.customerId}
+                    </if>
+                    <if test="params.username!=null and params.username!=''">
+                        AND tc.USERNAME LIKE CONCAT( '%',#{params.username}, '%')
+                    </if>
+                    <if test="params.type!=null and params.type!=''">
+                        AND tbr.TYPE = #{params.type}
+                    </if>
+                    <if test="params.startDate!= null and params.startDate!=''">
+                        AND <![CDATA[ tbr.CREATE_TIME >=  #{params.startDate} ]]>
+                    </if>
+                    <if test="params.endDate!= null and params.endDate!=''">
+                        AND <![CDATA[ tbr.CREATE_TIME < DATE_ADD(#{params.endDate},INTERVAL 1 DAY) ]]>
+                    </if>
+                </if>
+            </where>
+        ) res
+        LEFT JOIN T_SYS_USER ce ON res.CREATE_EMP = ce.ID
+        LEFT JOIN T_SYS_USER me ON res.MODIFY_EMP = me.ID
+        ORDER BY res.ID desc
+        LIMIT #{params.startIndex},#{params.pageSize}
+    </select>
+    <!-- 查询记录总条数 -->
+    <select id="getCount"
+            parameterType="com.ucar.team.seven.tea.customer.vo.params.BalanceRecordParamVo"
+            resultType="java.lang.Long">
+        SELECT COUNT(1) FROM
+        <include refid="tableName"></include> tbr
+        LEFT JOIN T_CUSTOMER tc ON tbr.CUSTOMER_ID = tc.ID
+        <where>
+            <if test="params!=null">
+                <if test="params.customerId!=null and params.customerId!=''">
+                    tbr.CUSTOMER_ID = #{params.customerId}
+                </if>
+                <if test="params.username!=null and params.username!=''">
+                    AND tc.USERNAME LIKE CONCAT( '%',#{params.username}, '%')
+                </if>
+                <if test="params.type!=null and params.type!=''">
+                    AND tbr.TYPE = #{params.type}
+                </if>
+                <if test="params.startDate!= null and params.startDate!=''">
+                    AND <![CDATA[ tbr.CREATE_TIME >=  #{params.startDate} ]]>
+                </if>
+                <if test="params.endDate!= null and params.endDate!=''">
+                    AND <![CDATA[ tbr.CREATE_TIME < DATE_ADD(#{params.endDate},INTERVAL 1 DAY) ]]>
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入一条账单记录 -->
+    <insert id="insert"
+            parameterType="com.ucar.team.seven.tea.customer.entity.BalanceRecord"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO
+        <include refid="tableName"></include>
+        (CUSTOMER_ID,TYPE,AMOUNT,ORDER_NUMBER,BALANCE_OLD,BALANCE_NEW,
+        CREATE_TIME,MODIFY_TIME,CREATE_EMP,MODIFY_EMP)
+        VALUES
+        (#{customerId},#{type},#{amount},#{orderNumber},#{balanceOld},#{balanceNew},
+        NOW(),NOW(),#{createEmp},#{modifyEmp});
+    </insert>
+
+</mapper>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.address.dao.AdressDao">
+
+    <resultMap id="BaseResultMap" type="com.ucar.team.seven.tea.address.entity.Adress">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="customer_id" jdbcType="BIGINT" property="customerId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="sex" jdbcType="INTEGER" property="sex"/>
+        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
+        <result column="province" jdbcType="VARCHAR" property="province"/>
+        <result column="city" jdbcType="VARCHAR" property="city"/>
+        <result column="area" jdbcType="VARCHAR" property="area"/>
+        <result column="detail_address" jdbcType="VARCHAR" property="detailAddress"/>
+        <result column="is_def" jdbcType="INTEGER" property="isDef"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="create_emp" jdbcType="BIGINT" property="createEmp"/>
+        <result column="modify_emp" jdbcType="BIGINT" property="modifyEmp"/>
+        <result column="modify_time" jdbcType="TIMESTAMP" property="modifyTime"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+    </resultMap>
+
+    <sql id="table_name">t_shipping_address</sql>
+
+    <sql id="all_fileds">
+        ID,CUSTOMER_ID,NAME,SEX,MOBILE,PROVINCE,CITY,AREA,DETAIL_ADDRESS,IS_DEF,
+        CREATE_TIME,MODIFY_TIME,
+        CREATE_EMP,
+        MODIFY_EMP,
+        REMARK
+    </sql>
+
+    <select id="getById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select
+        <include refid="all_fileds"></include>
+        from
+        <include refid="table_name"></include>
+        where id = #{id}
+    </select>
+
+    <select id="getAdressesByUserId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select
+        <include refid="all_fileds"></include>
+        from
+        <include refid="table_name"></include>
+        where CUSTOMER_ID = #{id}
+    </select>
+
+    <select id="getUserDefaultReceveAdrr" parameterType="java.lang.Long"
+            resultMap="BaseResultMap">
+        select
+        <include refid="all_fileds"></include>
+        from
+        <include refid="table_name"></include>
+        where CUSTOMER_ID = #{id} and IS_DEF = 1
+
+    </select>
+
+    <select id="countAdressTotalByUserId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+       SELECT
+            COUNT(id)
+        FROM
+          <include refid="table_name"></include>
+        WHERE
+        CUSTOMER_ID = #{id}
+
+    </select>
+
+    <delete id="deleteBatch">
+        delete from
+        <include refid="table_name"></include>
+        <if test="array!= null">
+            where id in
+            (
+            <foreach collection="array" item="Id" index="index" separator=",">
+                #{Id}
+            </foreach>
+
+            )
+
+        </if>
+
+    </delete>
+
+    <insert id="insert" parameterType="com.ucar.team.seven.tea.address.entity.Adress">
+        insert into
+        <include refid="table_name"></include>
+        (
+        CUSTOMER_ID,
+        NAME,
+        SEX,
+        MOBILE,
+        PROVINCE,
+        CITY,
+        AREA,
+        DETAIL_ADDRESS,
+        IS_DEF,
+        CREATE_TIME,
+        MODIFY_TIME,
+        CREATE_EMP,
+        MODIFY_EMP,
+        REMARK
+        )
+        values(
+        #{customerId},
+        #{name},
+        #{sex},
+        #{mobile},
+        #{province},
+        #{city},
+        #{area},
+        #{detailAddress},
+        #{isDef},
+        #{createTime},
+        #{modifyTime},
+        #{createEmp},
+        #{modifyEmp},
+        #{remark}
+
+        )
+
+    </insert>
+
+    <update id="cancleOldDefaultAddr">
+        update
+        <include refid="table_name"></include>
+        set IS_DEF = #{cancelSign}
+        where customer_id = #{customerId}
+    </update>
+
+    <update id="update" parameterType="com.ucar.team.seven.tea.address.entity.Adress" >
+        update
+        <include refid="table_name"></include>
+        <set>
+            <if test="customerId!=null and customerId!=''">
+                CUSTOMER_ID = #{customerId},
+            </if>
+            <if test="name!=null and name!=''">
+                NAME = #{name},
+            </if>
+
+            <if test="sex!=null and sex!=''">
+                SEX = #{sex},
+            </if>
+            <if test="mobile!=null and mobile!=''">
+                MOBILE = #{mobile},
+            </if>
+            <if test="province!=null and province!=''">
+                PROVINCE = #{province},
+            </if>
+            <if test="city!=null and city!=''">
+                CITY = #{city},
+            </if>
+            <if test="area!=null and area!=''">
+                AREA = #{area},
+            </if>
+            <if test="detailAddress!=null and detailAddress!=''">
+                DETAIL_ADDRESS = #{detailAddress},
+            </if>
+            <if test="isDef!=null and isDef!=''">
+                IS_DEF = #{isDef},
+            </if>
+            <if test="createTime!=null and createTime!=''">
+                CREATE_TIME = #{createTime},
+            </if>
+            <if test="createTime!=null and createTime!=''">
+                MODIFY_TIME = #{modifyTime},
+            </if>
+            <if test="createTime!=null and createTime!=''">
+                CREATE_EMP = #{createEmp},
+            </if>
+            <if test="createTime!=null and createTime!=''">
+                MODIFY_EMP = #{modifyEmp},
+            </if>
+            <if test="createTime!=null and createTime!=''">
+                REMARK =#{remark},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="setDefaultAddrById" >
+        update
+        <include refid="table_name"></include>
+        set IS_DEF = #{defSign}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteAddrById" parameterType="java.lang.Long">
+        delete from
+        <include refid="table_name"></include>
+        where id = #{id}
+    </delete>
+
+
+</mapper>

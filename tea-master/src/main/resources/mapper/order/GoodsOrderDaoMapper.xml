@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.team.seven.tea.order.dao.GoodsOrderDao">
+    <sql id="tableName">
+        T_GOODS_ORDER
+    </sql>
+
+    <sql id="Field">
+		ID,ORDER_ID,GOODS_ID,QUANTITY,UNIT_PRICE,TOTAL_PRICE,CREATE_EMP,CREATE_TIME,MODIFY_EMP,MODIFY_TIME,REMARK
+	</sql>
+
+    <insert id="insert">
+        insert into
+        <include refid="tableName"></include>
+        (ORDER_ID,GOODS_ID,QUANTITY,UNIT_PRICE,TOTAL_PRICE,CREATE_EMP,CREATE_TIME,MODIFY_EMP,MODIFY_TIME,REMARK)
+        values (#{orderId},#{goodsId},#{quantity},#{unitPrice},#{totalPrice},#{createEmp},NOW(),#{modifyEmp},NOW(),#{remark})
+    </insert>
+
+</mapper>
